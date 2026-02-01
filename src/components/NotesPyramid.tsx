@@ -1,10 +1,53 @@
 "use client";
 
-import { Fragrance, getNoteCategory } from "@/data/fragrances";
-import { getCategoryIcon } from "@/lib/recommendations";
+import { Fragrance } from "@/lib/types";
 
 interface NotesPyramidProps {
   fragrance: Fragrance;
+}
+
+// Simple note category detection
+function getNoteCategory(note: string): string | undefined {
+  const lowerNote = note.toLowerCase();
+  const categories: Record<string, string[]> = {
+    citrus: ["bergamot", "lemon", "orange", "grapefruit", "lime", "mandarin", "citrus"],
+    floral: ["rose", "jasmine", "iris", "violet", "lily", "peony", "magnolia", "tuberose", "neroli", "lavender", "geranium"],
+    woody: ["sandalwood", "cedar", "vetiver", "oud", "patchouli", "guaiac", "birch", "cypress", "pine", "wood"],
+    spicy: ["pepper", "cardamom", "cinnamon", "nutmeg", "clove", "ginger", "saffron", "cumin"],
+    oriental: ["amber", "vanilla", "benzoin", "tonka", "incense", "myrrh", "labdanum"],
+    fresh: ["marine", "aquatic", "ozonic", "sea", "mint", "cucumber"],
+    green: ["grass", "leaf", "fig", "bamboo", "tea", "basil"],
+    gourmand: ["chocolate", "coffee", "caramel", "honey", "praline", "coconut", "almond", "rum"],
+    fruity: ["apple", "pear", "raspberry", "blackberry", "strawberry", "cherry", "plum", "fig", "peach", "mango"],
+    musk: ["musk", "ambrette", "ambroxan"],
+    leather: ["leather", "suede"],
+    tobacco: ["tobacco"]
+  };
+
+  for (const [category, notes] of Object.entries(categories)) {
+    if (notes.some(n => lowerNote.includes(n))) {
+      return category;
+    }
+  }
+  return undefined;
+}
+
+function getCategoryIcon(category: string): string {
+  const icons: Record<string, string> = {
+    citrus: "🍋",
+    floral: "🌸",
+    woody: "🌲",
+    spicy: "🌶️",
+    oriental: "✨",
+    fresh: "💧",
+    green: "🌿",
+    gourmand: "🍫",
+    fruity: "🍎",
+    musk: "🤍",
+    leather: "🧥",
+    tobacco: "🍂"
+  };
+  return icons[category] || "🌺";
 }
 
 function NoteTag({ note }: { note: string }) {
@@ -45,14 +88,18 @@ export function NotesPyramid({ fragrance }: NotesPyramidProps) {
                   Top Notes
                 </h4>
                 <p className="text-xs text-amber-700 dark:text-amber-400">
-                  First impression · 15-30 minutes
+                  First impression
                 </p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2 justify-center">
-              {fragrance.notes.top.map((note) => (
-                <NoteTag key={note} note={note} />
-              ))}
+              {fragrance.notes.top.length > 0 ? (
+                fragrance.notes.top.map((note) => (
+                  <NoteTag key={note} note={note} />
+                ))
+              ) : (
+                <span className="text-sm text-amber-600 dark:text-amber-400 italic">No top notes listed</span>
+              )}
             </div>
           </div>
         </div>
@@ -67,14 +114,18 @@ export function NotesPyramid({ fragrance }: NotesPyramidProps) {
                   Heart Notes
                 </h4>
                 <p className="text-xs text-rose-700 dark:text-rose-400">
-                  The core character · 30 min - 4 hours
+                  The core character
                 </p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2 justify-center">
-              {fragrance.notes.middle.map((note) => (
-                <NoteTag key={note} note={note} />
-              ))}
+              {fragrance.notes.middle.length > 0 ? (
+                fragrance.notes.middle.map((note) => (
+                  <NoteTag key={note} note={note} />
+                ))
+              ) : (
+                <span className="text-sm text-rose-600 dark:text-rose-400 italic">No heart notes listed</span>
+              )}
             </div>
           </div>
         </div>
@@ -89,69 +140,41 @@ export function NotesPyramid({ fragrance }: NotesPyramidProps) {
                   Base Notes
                 </h4>
                 <p className="text-xs text-stone-700 dark:text-stone-400">
-                  Foundation & lasting impression · 4+ hours
+                  Foundation & lasting impression
                 </p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2 justify-center">
-              {fragrance.notes.base.map((note) => (
-                <NoteTag key={note} note={note} />
-              ))}
+              {fragrance.notes.base.length > 0 ? (
+                fragrance.notes.base.map((note) => (
+                  <NoteTag key={note} note={note} />
+                ))
+              ) : (
+                <span className="text-sm text-stone-600 dark:text-stone-400 italic">No base notes listed</span>
+              )}
             </div>
           </div>
         </div>
       </div>
 
       {/* Accords */}
-      <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-          Main Accords
-        </h4>
-        <div className="flex flex-wrap gap-2">
-          {fragrance.accords.map((accord) => (
-            <span
-              key={accord}
-              className="px-3 py-1 bg-gradient-to-r from-amber-500 to-rose-500 text-white rounded-full text-sm font-medium shadow-sm"
-            >
-              {accord}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Season & Occasion */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-          <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-2">
-            Best Seasons
+      {fragrance.accords && fragrance.accords.length > 0 && (
+        <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            Main Accords
           </h4>
-          <div className="flex flex-wrap gap-1">
-            {fragrance.season.map((s) => (
+          <div className="flex flex-wrap gap-2">
+            {fragrance.accords.map((accord) => (
               <span
-                key={s}
-                className="px-2 py-0.5 bg-blue-100 dark:bg-blue-800/50 text-blue-700 dark:text-blue-300 rounded text-xs capitalize"
+                key={accord}
+                className="px-3 py-1 bg-gradient-to-r from-amber-500 to-rose-500 text-white rounded-full text-sm font-medium shadow-sm"
               >
-                {s}
+                {accord}
               </span>
             ))}
           </div>
         </div>
-        <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-          <h4 className="text-sm font-semibold text-purple-900 dark:text-purple-200 mb-2">
-            Best Occasions
-          </h4>
-          <div className="flex flex-wrap gap-1">
-            {fragrance.occasion.map((o) => (
-              <span
-                key={o}
-                className="px-2 py-0.5 bg-purple-100 dark:bg-purple-800/50 text-purple-700 dark:text-purple-300 rounded text-xs capitalize"
-              >
-                {o}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

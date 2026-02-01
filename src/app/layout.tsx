@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Layer Lab - Fragrance Layering Companion",
-  description: "Discover perfect fragrance combinations. Extract notes from your favorite perfumes and get personalized layering recommendations.",
+  description: "Discover perfect fragrance combinations. Build personalized layering recipes with smart recommendations.",
 };
 
 export default function RootLayout({
@@ -13,7 +13,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="font-sans antialiased">
+      <body className="antialiased">
         {children}
       </body>
     </html>

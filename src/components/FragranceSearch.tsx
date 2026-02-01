@@ -1,37 +1,55 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Fragrance, fragrances } from "@/data/fragrances";
+import { FragranceListItem } from "@/lib/types";
 
 interface FragranceSearchProps {
-  onSelect: (fragrance: Fragrance) => void;
-  selectedFragrance: Fragrance | null;
+  onSelect: (fragranceId: string | null) => void;
+  selectedFragranceId: string | null;
 }
 
-export function FragranceSearch({ onSelect, selectedFragrance }: FragranceSearchProps) {
+export function FragranceSearch({ onSelect, selectedFragranceId }: FragranceSearchProps) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-  const [filteredFragrances, setFilteredFragrances] = useState<Fragrance[]>([]);
+  const [filteredFragrances, setFilteredFragrances] = useState<FragranceListItem[]>([]);
+  const [selectedFragrance, setSelectedFragrance] = useState<FragranceListItem | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Fetch fragrances when query changes
   useEffect(() => {
-    if (query.length === 0) {
-      setFilteredFragrances(fragrances.slice(0, 10));
-    } else {
-      const lowerQuery = query.toLowerCase();
-      const filtered = fragrances.filter(
-        (f) =>
-          f.name.toLowerCase().includes(lowerQuery) ||
-          f.brand.toLowerCase().includes(lowerQuery) ||
-          f.accords.some((a) => a.toLowerCase().includes(lowerQuery)) ||
-          [...f.notes.top, ...f.notes.middle, ...f.notes.base].some((n) =>
-            n.toLowerCase().includes(lowerQuery)
-          )
-      );
-      setFilteredFragrances(filtered.slice(0, 10));
-    }
+    const fetchFragrances = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/fragrances?query=${encodeURIComponent(query)}&limit=10`);
+        if (response.ok) {
+          const data = await response.json();
+          setFilteredFragrances(data);
+        }
+      } catch (error) {
+        console.error("Error fetching fragrances:", error);
+        setFilteredFragrances([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const debounce = setTimeout(fetchFragrances, 200);
+    return () => clearTimeout(debounce);
   }, [query]);
+
+  // Fetch selected fragrance details when selectedFragranceId changes
+  useEffect(() => {
+    if (selectedFragranceId && !selectedFragrance) {
+      fetch(`/api/fragrances/${selectedFragranceId}`)
+        .then(res => res.json())
+        .then(data => setSelectedFragrance(data))
+        .catch(console.error);
+    } else if (!selectedFragranceId) {
+      setSelectedFragrance(null);
+    }
+  }, [selectedFragranceId, selectedFragrance]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -49,14 +67,16 @@ export function FragranceSearch({ onSelect, selectedFragrance }: FragranceSearch
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSelect = (fragrance: Fragrance) => {
-    onSelect(fragrance);
+  const handleSelect = (fragrance: FragranceListItem) => {
+    setSelectedFragrance(fragrance);
+    onSelect(fragrance.id);
     setQuery("");
     setIsOpen(false);
   };
 
   const clearSelection = () => {
-    onSelect(null as unknown as Fragrance);
+    setSelectedFragrance(null);
+    onSelect(null);
     setQuery("");
     inputRef.current?.focus();
   };
@@ -71,9 +91,11 @@ export function FragranceSearch({ onSelect, selectedFragrance }: FragranceSearch
                 <span className="text-lg font-semibold text-amber-900 dark:text-amber-100">
                   {selectedFragrance.name}
                 </span>
-                <span className="text-sm px-2 py-0.5 bg-amber-200/50 dark:bg-amber-800/50 rounded-full text-amber-700 dark:text-amber-300">
-                  {selectedFragrance.concentration}
-                </span>
+                {selectedFragrance.concentration && (
+                  <span className="text-sm px-2 py-0.5 bg-amber-200/50 dark:bg-amber-800/50 rounded-full text-amber-700 dark:text-amber-300">
+                    {selectedFragrance.concentration}
+                  </span>
+                )}
               </div>
               <p className="text-sm text-amber-700 dark:text-amber-400">
                 {selectedFragrance.brand}
@@ -101,18 +123,22 @@ export function FragranceSearch({ onSelect, selectedFragrance }: FragranceSearch
         ) : (
           <>
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-gray-400"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                  clipRule="evenodd"
-                />
-              </svg>
+              {isLoading ? (
+                <div className="w-5 h-5 border-2 border-gray-300 border-t-amber-500 rounded-full animate-spin" />
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 text-gray-400"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              )}
             </div>
             <input
               ref={inputRef}
@@ -120,7 +146,7 @@ export function FragranceSearch({ onSelect, selectedFragrance }: FragranceSearch
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => setIsOpen(true)}
-              placeholder="Search by name, brand, or notes..."
+              placeholder="Search by name or brand..."
               className="w-full pl-11 pr-4 py-4 text-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all shadow-sm"
             />
           </>
@@ -134,7 +160,7 @@ export function FragranceSearch({ onSelect, selectedFragrance }: FragranceSearch
         >
           {filteredFragrances.length === 0 ? (
             <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-              No fragrances found
+              {isLoading ? "Searching..." : "No fragrances found"}
             </div>
           ) : (
             <ul className="max-h-[400px] overflow-y-auto">
@@ -157,24 +183,25 @@ export function FragranceSearch({ onSelect, selectedFragrance }: FragranceSearch
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-600 dark:text-gray-400">
-                          {fragrance.concentration}
-                        </span>
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full ${
-                            fragrance.gender === "masculine"
-                              ? "bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300"
-                              : fragrance.gender === "feminine"
-                              ? "bg-pink-100 dark:bg-pink-900/50 text-pink-700 dark:text-pink-300"
-                              : "bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300"
-                          }`}
-                        >
-                          {fragrance.gender}
-                        </span>
+                        {fragrance.concentration && (
+                          <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-600 dark:text-gray-400">
+                            {fragrance.concentration}
+                          </span>
+                        )}
+                        {fragrance.gender && (
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-full ${
+                              fragrance.gender === "masculine"
+                                ? "bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300"
+                                : fragrance.gender === "feminine"
+                                ? "bg-pink-100 dark:bg-pink-900/50 text-pink-700 dark:text-pink-300"
+                                : "bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300"
+                            }`}
+                          >
+                            {fragrance.gender}
+                          </span>
+                        )}
                       </div>
-                    </div>
-                    <div className="mt-1 text-sm text-gray-500 dark:text-gray-500">
-                      {fragrance.accords.slice(0, 3).join(" · ")}
                     </div>
                   </button>
                 </li>

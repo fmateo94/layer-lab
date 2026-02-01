@@ -1,13 +1,33 @@
 "use client";
 
-import { LayeringRecommendation, getLayeringTips } from "@/lib/recommendations";
-import { Fragrance } from "@/data/fragrances";
+import { LayeringRecommendation, Fragrance } from "@/lib/types";
 import { useState } from "react";
 
 interface RecommendationCardProps {
   recommendation: LayeringRecommendation;
   primaryFragrance: Fragrance;
   rank: number;
+}
+
+// Generate layering tips based on fragrance characteristics
+function getLayeringTips(primary: Fragrance, secondary: Fragrance): string[] {
+  const tips: string[] = [];
+
+  // Basic layering advice
+  tips.push(`Apply ${primary.name} first as the base layer`);
+  tips.push(`Add ${secondary.name} on top after the base settles`);
+
+  // Concentration-based advice
+  if (primary.concentration === 'Parfum' || primary.concentration === 'EDP') {
+    tips.push("Use 1-2 sprays of the base due to its strength");
+  }
+  if (secondary.concentration === 'EDT' || secondary.concentration === 'Cologne') {
+    tips.push("You may need extra sprays of the topper for balance");
+  }
+
+  tips.push("Test on skin to see how they blend with your chemistry");
+
+  return tips;
 }
 
 export function RecommendationCard({
@@ -73,20 +93,11 @@ export function RecommendationCard({
           </h3>
           <p className="text-gray-600 dark:text-gray-400">{fragrance.brand}</p>
           <div className="flex items-center gap-2 mt-2">
-            <span className="text-xs px-2 py-0.5 bg-white/50 dark:bg-gray-800/50 rounded-full text-gray-600 dark:text-gray-400">
-              {fragrance.concentration}
-            </span>
-            <span
-              className={`text-xs px-2 py-0.5 rounded-full ${
-                fragrance.gender === "masculine"
-                  ? "bg-blue-200/50 dark:bg-blue-800/30 text-blue-700 dark:text-blue-300"
-                  : fragrance.gender === "feminine"
-                  ? "bg-pink-200/50 dark:bg-pink-800/30 text-pink-700 dark:text-pink-300"
-                  : "bg-purple-200/50 dark:bg-purple-800/30 text-purple-700 dark:text-purple-300"
-              }`}
-            >
-              {fragrance.gender}
-            </span>
+            {fragrance.concentration && (
+              <span className="text-xs px-2 py-0.5 bg-white/50 dark:bg-gray-800/50 rounded-full text-gray-600 dark:text-gray-400">
+                {fragrance.concentration}
+              </span>
+            )}
           </div>
         </div>
 
