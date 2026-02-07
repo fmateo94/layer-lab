@@ -5,11 +5,155 @@ import { Container } from "@/components/layout";
 import { Button, Card } from "@/components/ui";
 import { Fragrance, FragranceDetail, mapApiFragrance } from "@/lib/types";
 import Link from "next/link";
+import Image from "next/image";
+
+// Note to emoji mapping
+const noteEmojis: Record<string, string> = {
+    // Citrus
+    lemon: "🍋",
+    bergamot: "🍊",
+    orange: "🍊",
+    grapefruit: "🍊",
+    lime: "🍋",
+    citrus: "🍋",
+    mandarin: "🍊",
+    tangerine: "🍊",
+    yuzu: "🍋",
+    neroli: "🌸",
+    "bitter orange": "🍊",
+    // Floral
+    rose: "🌹",
+    jasmine: "🌸",
+    lavender: "💜",
+    iris: "💜",
+    violet: "💜",
+    lily: "🌸",
+    peony: "🌸",
+    magnolia: "🌸",
+    tuberose: "🌸",
+    gardenia: "🌸",
+    ylang: "🌸",
+    "ylang-ylang": "🌸",
+    geranium: "🌺",
+    orchid: "🌺",
+    heliotrope: "🌸",
+    // Woody
+    sandalwood: "🪵",
+    cedar: "🌲",
+    cedarwood: "🌲",
+    oud: "🪵",
+    vetiver: "🌿",
+    wood: "🪵",
+    pine: "🌲",
+    birch: "🌲",
+    guaiac: "🪵",
+    "guaiac wood": "🪵",
+    agarwood: "🪵",
+    // Spicy
+    cinnamon: "🌶️",
+    pepper: "🌶️",
+    "black pepper": "🌶️",
+    "pink pepper": "🌶️",
+    ginger: "🫚",
+    cardamom: "🌶️",
+    nutmeg: "🌰",
+    clove: "🌶️",
+    saffron: "🌶️",
+    // Sweet/Gourmand
+    vanilla: "🍦",
+    caramel: "🍯",
+    honey: "🍯",
+    chocolate: "🍫",
+    cocoa: "🍫",
+    tonka: "🍪",
+    "tonka bean": "🍪",
+    praline: "🍪",
+    almond: "🌰",
+    // Fresh/Aquatic
+    mint: "🌿",
+    water: "💧",
+    marine: "🌊",
+    sea: "🌊",
+    aquatic: "💧",
+    "sea salt": "🌊",
+    cucumber: "🥒",
+    melon: "🍈",
+    // Fruity
+    apple: "🍎",
+    peach: "🍑",
+    pear: "🍐",
+    berry: "🍓",
+    raspberry: "🍓",
+    strawberry: "🍓",
+    blackberry: "🫐",
+    blueberry: "🫐",
+    plum: "🍇",
+    fig: "🍇",
+    cherry: "🍒",
+    apricot: "🍑",
+    mango: "🥭",
+    coconut: "🥥",
+    pineapple: "🍍",
+    // Earthy/Green
+    patchouli: "🌿",
+    moss: "🌿",
+    oakmoss: "🌿",
+    earth: "🌍",
+    grass: "🌱",
+    "green notes": "🌱",
+    tea: "🍵",
+    "green tea": "🍵",
+    bamboo: "🎋",
+    basil: "🌿",
+    // Amber/Resin
+    amber: "✨",
+    benzoin: "✨",
+    incense: "🔥",
+    myrrh: "✨",
+    frankincense: "✨",
+    resin: "✨",
+    // Musk/Skin
+    musk: "💫",
+    "white musk": "💫",
+    skin: "💫",
+    cashmere: "☁️",
+    // Leather/Tobacco
+    leather: "🧥",
+    tobacco: "🍂",
+    suede: "🧥",
+    // Other
+    coffee: "☕",
+    rum: "🥃",
+    whiskey: "🥃",
+    wine: "🍷",
+    champagne: "🥂",
+};
+
+function getNoteEmoji(note: string): string {
+    const normalizedNote = note.toLowerCase().trim();
+
+    // Direct match
+    if (noteEmojis[normalizedNote]) {
+        return noteEmojis[normalizedNote];
+    }
+
+    // Partial match - check if note contains any keyword
+    for (const [keyword, emoji] of Object.entries(noteEmojis)) {
+        if (normalizedNote.includes(keyword) || keyword.includes(normalizedNote)) {
+            return emoji;
+        }
+    }
+
+    // Default emoji for unknown notes
+    return "✨";
+}
 
 // Note Chip component
 function NoteChip({ note }: { note: string }) {
+    const emoji = getNoteEmoji(note);
     return (
-        <span className="inline-flex px-3 py-1.5 bg-[var(--color-surface)] text-[var(--color-fg)] text-[13px] font-medium rounded-full">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-surface)] text-[var(--color-fg)] text-[13px] font-medium rounded-full">
+            <span>{emoji}</span>
             {note}
         </span>
     );
@@ -136,6 +280,17 @@ export default function FragranceDetailPage({
 
             {/* Hero */}
             <div className="mb-8">
+                {fragrance.imageUrl && (
+                    <div className="w-32 h-32 rounded-[var(--radius-lg)] bg-[var(--color-surface)] overflow-hidden mb-4">
+                        <Image
+                            src={fragrance.imageUrl}
+                            alt={fragrance.name}
+                            width={128}
+                            height={128}
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
+                )}
                 <h1 className="text-display text-[var(--color-fg)]">{fragrance.name}</h1>
                 <p className="text-body text-[var(--color-muted)] mt-1">
                     {fragrance.brand}
@@ -147,8 +302,8 @@ export default function FragranceDetailPage({
             <Card className="mb-6">
                 <h2 className="text-title text-[var(--color-fg)] mb-4">Notes</h2>
                 <NotesSection title="Top Notes" notes={fragrance.notes.top} defaultOpen />
-                <NotesSection title="Heart Notes" notes={fragrance.notes.middle} />
-                <NotesSection title="Base Notes" notes={fragrance.notes.base} />
+                <NotesSection title="Heart Notes" notes={fragrance.notes.middle} defaultOpen />
+                <NotesSection title="Base Notes" notes={fragrance.notes.base} defaultOpen />
             </Card>
 
             {/* Accords */}

@@ -13,16 +13,19 @@ import {
     mapApiRecommendation,
 } from "@/lib/types";
 import Link from "next/link";
+import Image from "next/image";
 
 // Explanation Drawer
 function ExplanationDrawer({
     isOpen,
     onClose,
     recommendation,
+    baseFragranceId,
 }: {
     isOpen: boolean;
     onClose: () => void;
     recommendation: LayeringRecommendation;
+    baseFragranceId: string;
 }) {
     if (!isOpen) return null;
 
@@ -33,10 +36,26 @@ function ExplanationDrawer({
             <div className="absolute inset-0 bg-black/40" onClick={onClose} />
             <div className="absolute bottom-0 left-0 right-0 bg-[var(--color-card)] rounded-t-2xl max-h-[70vh] overflow-y-auto safe-area-inset-bottom">
                 <div className="p-6">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-title text-[var(--color-fg)]">
-                            {recommendation.fragrance.name}
-                        </h3>
+                    <div className="flex items-start justify-between mb-6">
+                        <div className="flex items-center gap-4">
+                            {recommendation.fragrance.imageUrl && (
+                                <div className="w-16 h-16 rounded-[var(--radius-md)] bg-[var(--color-surface)] overflow-hidden shrink-0">
+                                    <Image
+                                        src={recommendation.fragrance.imageUrl}
+                                        alt={recommendation.fragrance.name}
+                                        width={64}
+                                        height={64}
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                            )}
+                            <div>
+                                <h3 className="text-title text-[var(--color-fg)]">
+                                    {recommendation.fragrance.name}
+                                </h3>
+                                <p className="text-caption">{recommendation.fragrance.brand}</p>
+                            </div>
+                        </div>
                         <button onClick={onClose} className="p-2 -mr-2">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -99,7 +118,7 @@ function ExplanationDrawer({
                     )}
 
                     {/* Add to Recipe */}
-                    <Link href={`/recipes/new?add=${recommendation.fragrance.id}`}>
+                    <Link href={`/recipes/new?base=${baseFragranceId}&add=${recommendation.fragrance.id}`}>
                         <Button fullWidth>Add to Recipe</Button>
                     </Link>
                 </div>
@@ -112,9 +131,11 @@ function ExplanationDrawer({
 function RecommendationRow({
     recommendation,
     rank,
+    baseFragranceId,
 }: {
     recommendation: LayeringRecommendation;
     rank: number;
+    baseFragranceId: string;
 }) {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const { fragrance, layeringType } = recommendation;
@@ -163,6 +184,7 @@ function RecommendationRow({
                 isOpen={drawerOpen}
                 onClose={() => setDrawerOpen(false)}
                 recommendation={recommendation}
+                baseFragranceId={baseFragranceId}
             />
         </>
     );
@@ -281,6 +303,7 @@ function RecommendationsContent() {
                             key={rec.fragrance.id}
                             recommendation={rec}
                             rank={index + 1}
+                            baseFragranceId={baseId}
                         />
                     ))}
                 </div>

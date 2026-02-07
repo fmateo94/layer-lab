@@ -6,6 +6,7 @@ import { Container } from "./Container";
 
 const navItems = [
     { href: "/collection", label: "Collection" },
+    { href: "/recommendations", label: "Discover" },
     { href: "/recipes", label: "Recipes" },
 ];
 

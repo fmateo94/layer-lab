@@ -233,6 +233,7 @@ export async function POST(request: NextRequest) {
         name,
         concentration,
         gender_marketing,
+        image_url,
         brands (name)
       `)
       .neq('id', base_fragrance_id)
@@ -322,6 +323,7 @@ export async function POST(request: NextRequest) {
         name: c.name,
         brand: candidate.brand,
         concentration: c.concentration,
+        image_url: c.image_url,
         score,
         explanation
       }

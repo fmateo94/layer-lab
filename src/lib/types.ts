@@ -34,6 +34,7 @@ export interface RecommendationItem {
   name: string
   brand: string
   concentration: string | null
+  image_url?: string | null
   score: number
   rank: number
   explanation: RecommendationExplanation
@@ -63,6 +64,7 @@ export interface Fragrance {
   accords: string[]
   season?: string[]
   occasion?: string[]
+  imageUrl?: string | null
 }
 
 export interface LayeringRecommendation {
@@ -102,7 +104,8 @@ export function mapApiRecommendation(item: RecommendationItem): LayeringRecommen
       gender: 'unisex', // API doesn't return this in recommendations, default to unisex
       concentration: item.concentration || 'EDP',
       notes: { top: [], middle: [], base: [] }, // Not needed for display
-      accords: []
+      accords: [],
+      imageUrl: item.image_url
     },
     score: item.score,
     reasons: reasons.length > 0 ? reasons : ['Creates an interesting combination'],
@@ -123,6 +126,7 @@ export function mapApiFragrance(detail: FragranceDetail): Fragrance {
     notes: detail.notes,
     accords: detail.accords,
     season: [],
-    occasion: []
+    occasion: [],
+    imageUrl: detail.image_url
   }
 }

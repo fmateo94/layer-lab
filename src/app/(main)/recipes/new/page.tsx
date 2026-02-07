@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Container } from "@/components/layout";
 import { Button, Card, Input } from "@/components/ui";
 import { Fragrance, FragranceDetail, mapApiFragrance } from "@/lib/types";
+import Image from "next/image";
 
 interface RecipeSlot {
     fragrance: Fragrance | null;
@@ -39,8 +40,20 @@ function FragranceSlot({
     return (
         <Card className="flex items-center gap-4">
             {/* Thumbnail */}
-            <div className="w-12 h-12 rounded-[var(--radius-md)] bg-[var(--color-surface)] flex items-center justify-center text-xl shrink-0">
-                ✨
+            <div className="w-12 h-12 rounded-[var(--radius-md)] bg-[var(--color-surface)] flex items-center justify-center shrink-0 overflow-hidden">
+                {slot.fragrance.imageUrl ? (
+                    <Image
+                        src={slot.fragrance.imageUrl}
+                        alt={slot.fragrance.name}
+                        width={48}
+                        height={48}
+                        className="w-full h-full object-cover"
+                    />
+                ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-[var(--color-muted)]">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                    </svg>
+                )}
             </div>
 
             <div className="flex-1 min-w-0">
@@ -92,6 +105,7 @@ function FragranceSlot({
 function RecipeBuilderContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const baseId = searchParams.get("base");
     const addId = searchParams.get("add");
 
     const [recipeName, setRecipeName] = useState("");
@@ -102,35 +116,49 @@ function RecipeBuilderContent() {
     ]);
 
     useEffect(() => {
-        async function fetchAndAddFragrance() {
-            if (!addId) return;
+        async function fetchFragrances() {
+            const updates: { index: number; fragrance: Fragrance }[] = [];
 
-            try {
-                const response = await fetch(`/api/fragrances/${addId}`);
-                if (response.ok) {
-                    const data: FragranceDetail = await response.json();
-                    const fragrance = mapApiFragrance(data);
-
-                    setSlots((prev) => {
-                        const emptySlotIndex = prev.findIndex((s) => !s.fragrance);
-                        if (emptySlotIndex !== -1) {
-                            const updated = [...prev];
-                            updated[emptySlotIndex] = {
-                                ...updated[emptySlotIndex],
-                                fragrance,
-                            };
-                            return updated;
-                        }
-                        return prev;
-                    });
+            // Fetch base fragrance (from collection) - goes in slot 0
+            if (baseId) {
+                try {
+                    const response = await fetch(`/api/fragrances/${baseId}`);
+                    if (response.ok) {
+                        const data: FragranceDetail = await response.json();
+                        updates.push({ index: 0, fragrance: mapApiFragrance(data) });
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch base fragrance:", error);
                 }
-            } catch (error) {
-                console.error("Failed to fetch fragrance:", error);
+            }
+
+            // Fetch recommended fragrance (topper) - goes in slot 1
+            if (addId) {
+                try {
+                    const response = await fetch(`/api/fragrances/${addId}`);
+                    if (response.ok) {
+                        const data: FragranceDetail = await response.json();
+                        updates.push({ index: 1, fragrance: mapApiFragrance(data) });
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch topper fragrance:", error);
+                }
+            }
+
+            // Apply all updates at once
+            if (updates.length > 0) {
+                setSlots((prev) => {
+                    const updated = [...prev];
+                    updates.forEach(({ index, fragrance }) => {
+                        updated[index] = { ...updated[index], fragrance };
+                    });
+                    return updated;
+                });
             }
         }
 
-        fetchAndAddFragrance();
-    }, [addId]);
+        fetchFragrances();
+    }, [baseId, addId]);
 
     const removeFromSlot = (index: number) => {
         setSlots((prev) => {
